@@ -1,3 +1,4 @@
+'use client';
 import React, { ElementRef, useEffect, useRef, useState } from 'react';
 
 const Canvas = () => {
@@ -61,11 +62,12 @@ const Canvas = () => {
   return (
     <div
       ref={containerRef}
-      className="w-full h-1/2 border border-primary rounded-lg"
+      className="w-1/2 h-1/2 border border-primary rounded-lg overflow-hidden"
     >
       <canvas
-        width={containerRef.current?.offsetWidth ?? 500}
-        height={containerRef.current?.offsetHeight ?? 500}
+        className="overflow-hidden"
+        width={containerRef.current?.offsetWidth ?? 1000}
+        height={containerRef.current?.offsetHeight ?? 1000}
         ref={canvasRef}
       />
     </div>
