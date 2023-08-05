@@ -1,8 +1,8 @@
 // redux create toolkit store
 import { Middleware, PayloadAction, configureStore } from '@reduxjs/toolkit';
 import { useDispatch, TypedUseSelectorHook, useSelector } from 'react-redux';
-import { todoSlice } from './slices/todoSlice';
 import { SocketIO, socketManager } from './socket';
+import { exploreSlice } from './slices/challengeSlice';
 export type SocketAction = { type: string; payload: any; meta: Meta };
 type Meta = {};
 export function withMeta<TPayload, TState>(
@@ -27,7 +27,9 @@ export const socketMiddleware =
     getState: typeof store.getState;
   }) =>
   (next) =>
-  (action: SocketAction & { meta: Meta | undefined }) => {};
+  (action: SocketAction & { meta: Meta | undefined }) => {
+    next(action);
+  };
 
 const indexDBMiddleware =
   (): Middleware<{}, any> =>
@@ -39,11 +41,13 @@ const indexDBMiddleware =
     getState: typeof store.getState;
   }) =>
   (next) =>
-  (action: SocketAction & { meta: Meta | undefined }) => {};
+  (action: SocketAction & { meta: Meta | undefined }) => {
+    next(action);
+  };
 
 export const store = configureStore({
   reducer: {
-    todo: todoSlice.reducer,
+    explore: exploreSlice.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware()

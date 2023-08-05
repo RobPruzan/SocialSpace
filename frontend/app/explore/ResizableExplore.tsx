@@ -1,43 +1,23 @@
 'use client';
 import Canvas from '@/components/canvas/Canvas';
 import Resizable from '@/components/ui/resizeable';
-import { Percentage } from '@/lib/types';
-import React from 'react';
+import { Percentage, TypedChallenge } from '@/lib/types';
+import React, { useState } from 'react';
 
 type Props = {};
 
 const ResizableExplore = (props: Props) => {
-  const [socialSize, setSocialSize] = React.useState<number | Percentage>(
-    '80%'
-  );
   const [canvasSize, setCanvasSize] = React.useState<number | Percentage>(
-    '20%'
+    '70%'
   );
+  const [socialSize, setSocialSize] = React.useState<number | Percentage>(
+    '30%'
+  );
+
+  const [currentChallenge, setCurrentChallenge] =
+    useState<TypedChallenge | null>(null);
+
   return (
-    // <Resizable
-    //   canvasSize={canvasSize}
-    //   setCanvasSize={setCanvasSize}
-    //   socialSize={socialSize}
-    //   setSocialSize={setSocialSize}
-    //   type="horizontal"
-    //   // leftDiv={
-    //   //   <>
-    //   //     <div className="flex w-full flex-col h-full border-2 items-center justify-start">
-    //   //       {/* <div className="h-[8%] w-full border-2 rounded-md "></div> */}
-    //   //       {/* <Canvas className="min-w-[100%] max-w-[100%]  min-h-[90%] max-h-[90%] rounded-md" /> */}
-    //   //     </div>
-    //   //   </>
-    //   // }
-    //   leftDiv={
-    //     <div className="flex w-full flex-col h-full border-2 items-center justify-start"></div>
-    //   }
-    //   rightDiv={
-    //     <>
-    // <div className="h-[8%] w-full border-2 rounded-md "></div>
-    // <div className="h-[90%] w-full border-2 rounded-md "></div>
-    //     </>
-    //   }
-    // />
     <div className="h-[95%] w-[95%] flex justify-evenly items-center">
       <Resizable
         canvasSize={canvasSize}
@@ -48,6 +28,8 @@ const ResizableExplore = (props: Props) => {
         leftDiv={
           <div className="flex w-full flex-col h-full  items-center justify-start">
             <Canvas
+              currentChallenge={currentChallenge}
+              setCurrentChallenge={setCurrentChallenge}
               leftDivSize={canvasSize}
               rightDivSize={socialSize}
               className="min-w-[100%] max-w-[100%]  min-h-[98%] max-h-[98%] "
@@ -56,7 +38,9 @@ const ResizableExplore = (props: Props) => {
         }
         rightDiv={
           <div className="w-full h-full ">
-            <div className="h-[8%] w-full border-2 border-b-0  "></div>
+            <div className="h-[8%] w-full border-2 border-b-0 text-lg text-white">
+              {currentChallenge?.id}
+            </div>
             <div className="h-[90%] w-full border-2  "></div>
           </div>
         }
@@ -64,19 +48,5 @@ const ResizableExplore = (props: Props) => {
     </div>
   );
 };
-
-{
-  /* <Resizable
-canvasSize={canvasSize}
-setCanvasSize={setCanvasSize}
-socialSize={socialSize}
-setSocialSize={setSocialSize}
-type="horizontal"
-leftDiv={
-  <div className="flex w-full flex-col h-full border-2 items-center justify-start"></div>
-}
-rightDiv={<div className="w-full h-full border-2 border-secondary"></div>}
-/> */
-}
 
 export default ResizableExplore;

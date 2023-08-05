@@ -22,121 +22,94 @@ import {
   ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
-import { Percentage } from '@/lib/types';
+import { Percentage, TypedChallenge, ViewObjects } from '@/lib/types';
+import {
+  Challenge,
+  ExploreActions,
+  buildInitialChallenge,
+} from '@/redux/slices/challengeSlice';
+import { useAppDispatch, useAppSelector } from '@/redux/store';
+import { useResize } from '@/hooks/useResize';
+import { useWheel } from '@/hooks/useWheel';
+import { Geometry, Mouse } from '@/lib/geomotry';
 
 type Props = {
   leftDivSize: number | Percentage;
   rightDivSize: number | Percentage;
+  currentChallenge: TypedChallenge | null;
+  setCurrentChallenge: React.Dispatch<
+    React.SetStateAction<TypedChallenge | null>
+  >;
 } & ComponentProps<'div'>;
 
-const Canvas = ({ leftDivSize, rightDivSize, ...divProps }: Props) => {
+const Canvas = ({
+  leftDivSize,
+  rightDivSize,
+  currentChallenge,
+  setCurrentChallenge,
+  ...divProps
+}: Props) => {
   const canvasRef = useRef<ElementRef<'canvas'>>(null);
   const containerRef = useRef<ElementRef<'div'>>(null);
   const [camera, setCamera] = useState<[number, number]>([0, 0]);
   const [canvasDim, setCanvasDim] = useState<[number, number]>([500, 500]);
+  const [mouse, setMouse] = useState<Mouse | null>(null);
+  const dispatch = useAppDispatch();
+  const challenges = useAppSelector((store) => store.explore.challenges);
 
-  useEffect(() => {
-    function resizeHandler() {
-      const container = containerRef?.current;
-      if (!container) return;
-
-      setCanvasDim([container.offsetWidth, container.offsetHeight]);
-    }
-
-    window.addEventListener('resize', resizeHandler);
-    return () => {
-      window.removeEventListener('resize', resizeHandler);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    setCanvasDim([
-      containerRef.current.offsetWidth,
-      containerRef.current.offsetHeight,
-    ]);
-  }, [containerRef, leftDivSize, rightDivSize]);
-
-  useEffect(() => {
-    const canvasNode = canvasRef.current;
-    const handleWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      setCamera((camera) => {
-        const factor = 0.2;
-        const deltaX = e.deltaX * factor;
-        const deltaY = e.deltaY * factor;
-        return [camera[0] - deltaX, camera[1] - deltaY];
-      });
-    };
-
-    canvasNode?.addEventListener('wheel', handleWheel, { passive: false });
-
-    return () => {
-      canvasNode?.removeEventListener('wheel', handleWheel);
-    };
-  }, []);
+  const explore = useAppSelector((store) => store.explore);
+  useResize({
+    containerRef,
+    setCanvasDim,
+    leftDivSize,
+    rightDivSize,
+  });
+  useWheel({
+    canvasRef,
+    setCamera,
+  });
 
   useEffect(() => {
     const canvas = canvasRef?.current;
     const container = containerRef?.current;
     const ctx = canvas?.getContext('2d');
 
+    // const mouseWorldCord = mouse?.worldCord || [0, 0];
+
     if (!ctx || !canvas || !container) return;
-    // ctx.save();
-    const dpr = window.devicePixelRatio;
-    const rect = container.getBoundingClientRect();
 
-    // Set the "actual" size of the canvas
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
-
-    // Scale the context to ensure correct drawing operations
-    ctx.scale(dpr, dpr);
-
-    // // Translate the origin to the camera position
-
-    // Set the "drawn" size of the canvas
-    canvas.style.width = `${rect.width}px`;
-    canvas.style.height = `${rect.height}px`;
-
-    // // Clear the canvas, taking into account the new origin
-    // ctx.clearRect(-camera[0], -camera[1], rect.width, rect.height);
-    // ctx.restore();
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    Geometry.optimizeCanvas({ canvas, ctx, container });
     ctx.translate(camera[0], camera[1]);
 
-    // ctx.translate(camera[0], camera[1]);
-    const bounds = {
-      left: -camera[0],
-      top: -camera[1],
-      right: -camera[0] + canvas.width,
-      bottom: -camera[1] + canvas.height,
-    };
-    const gridSize = 50;
-    bounds.left = Math.floor(bounds.left / gridSize) * gridSize;
-    bounds.top = Math.floor(bounds.top / gridSize) * gridSize;
-    bounds.right = Math.ceil(bounds.right / gridSize) * gridSize;
-    bounds.bottom = Math.ceil(bounds.bottom / gridSize) * gridSize;
+    Geometry.drawBackground({ ctx, canvas, camera });
 
-    for (let x = bounds.left; x <= bounds.right; x += gridSize) {
-      for (let y = bounds.top; y <= bounds.bottom; y += gridSize) {
-        // light gray, lighter than ccc
-        ctx.strokeStyle = '#eee';
-        ctx.lineJoin = 'miter';
-        ctx.lineWidth = 0.6;
-        // ctx.strokeRect(x, y, gridSize, gridSize);
-        // circle
-        ctx.beginPath();
-        ctx.arc(x, y, 1, 0, 2 * Math.PI);
-        ctx.fillStyle = '#ccc';
-        ctx.stroke();
+    const hoveredChallenge = challenges.findLast((challenge) =>
+      mouse?.isInRectangle(challenge.cords)
+    );
+
+    explore.challenges.forEach((challenge) => {
+      const width = challenge.cords.p2[0] - challenge.cords.p1[0];
+      const height = challenge.cords.p2[1] - challenge.cords.p1[1];
+      ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
+      ctx.strokeRect(
+        challenge.cords.p1[0],
+        challenge.cords.p1[1],
+        width,
+        height
+      );
+      if (hoveredChallenge?.id === challenge.id) {
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
+        ctx.fillRect(
+          challenge.cords.p1[0],
+          challenge.cords.p1[1],
+          width,
+          height
+        );
       }
-    }
+    });
 
     ctx.restore();
-  }, [camera, canvasDim]);
+  }, [camera, canvasDim, challenges, explore.challenges, mouse]);
 
   return (
     <div
@@ -153,11 +126,60 @@ const Canvas = ({ leftDivSize, rightDivSize, ...divProps }: Props) => {
             width={canvasDim[0]}
             height={canvasDim[1]}
             ref={canvasRef}
+            onClick={(e) => {
+              if (!mouse) return;
+              const currentChallenge = challenges.find((challenge) =>
+                mouse.isInRectangle(challenge.cords)
+              );
+
+              if (!currentChallenge) {
+                setCurrentChallenge(null);
+                return;
+              }
+              console.log('dsafjds', {
+                type: ViewObjects.Challenge,
+                id: currentChallenge.id,
+              });
+              setCurrentChallenge({
+                type: ViewObjects.Challenge,
+                id: currentChallenge.id,
+              });
+            }}
+            onMouseMove={(event) => {
+              if (!canvasRef.current) return;
+              setMouse(
+                new Mouse(
+                  {
+                    type: 'event',
+                    canvas: canvasRef.current,
+                    event,
+                  },
+                  camera
+                )
+              );
+            }}
           />
         </ContextMenuTrigger>
         <ContextMenuContent className="w-64">
-          <ContextMenuItem inset>
-            Back
+          <ContextMenuItem
+            onClick={() => {
+              console.log('fds');
+              if (!canvasRef.current) return;
+
+              if (!mouse) return;
+
+              const initialChallenge = buildInitialChallenge({
+                cords: {
+                  p1: mouse.worldCord,
+                  p2: [mouse.worldCord[0] + 100, mouse.worldCord[1] + 100],
+                },
+              });
+
+              dispatch(ExploreActions.addChallenge(initialChallenge));
+            }}
+            inset
+          >
+            Create Challenge
             <ContextMenuShortcut>⌘[</ContextMenuShortcut>
           </ContextMenuItem>
           <ContextMenuItem inset disabled>
@@ -168,34 +190,6 @@ const Canvas = ({ leftDivSize, rightDivSize, ...divProps }: Props) => {
             Reload
             <ContextMenuShortcut>⌘R</ContextMenuShortcut>
           </ContextMenuItem>
-          <ContextMenuSub>
-            <ContextMenuSubTrigger inset>More Tools</ContextMenuSubTrigger>
-            <ContextMenuSubContent className="w-48">
-              <ContextMenuItem>
-                Save Page As...
-                <ContextMenuShortcut>⇧⌘S</ContextMenuShortcut>
-              </ContextMenuItem>
-              <ContextMenuItem>Create Shortcut...</ContextMenuItem>
-              <ContextMenuItem>Name Window...</ContextMenuItem>
-              <ContextMenuSeparator />
-              <ContextMenuItem>Developer Tools</ContextMenuItem>
-            </ContextMenuSubContent>
-          </ContextMenuSub>
-          <ContextMenuSeparator />
-          <ContextMenuCheckboxItem checked>
-            Show Bookmarks Bar
-            <ContextMenuShortcut>⌘⇧B</ContextMenuShortcut>
-          </ContextMenuCheckboxItem>
-          <ContextMenuCheckboxItem>Show Full URLs</ContextMenuCheckboxItem>
-          <ContextMenuSeparator />
-          <ContextMenuRadioGroup value="pedro">
-            <ContextMenuLabel inset>People</ContextMenuLabel>
-            <ContextMenuSeparator />
-            <ContextMenuRadioItem value="pedro">
-              Pedro Duarte
-            </ContextMenuRadioItem>
-            <ContextMenuRadioItem value="colm">Colm Tuite</ContextMenuRadioItem>
-          </ContextMenuRadioGroup>
         </ContextMenuContent>
       </ContextMenu>
     </div>
