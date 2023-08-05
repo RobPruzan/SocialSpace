@@ -1,8 +1,11 @@
 // redux create toolkit store
 import { configureStore } from '@reduxjs/toolkit';
 import { useDispatch, TypedUseSelectorHook, useSelector } from 'react-redux';
+import { todoSlice } from './slices/todoSlice';
 export const store = configureStore({
-  reducer: {},
+  reducer: {
+    todo: todoSlice.reducer,
+  },
 });
 
 export type RootState = ReturnType<typeof store.getState>;
