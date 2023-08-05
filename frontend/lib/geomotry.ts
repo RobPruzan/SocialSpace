@@ -76,7 +76,12 @@ export class Mouse {
       | { type: 'mouse'; mouse: [number, number] }
       | {
           type: 'event';
-          event: React.MouseEvent<HTMLCanvasElement, MouseEvent>;
+          event:
+            | React.MouseEvent<
+                HTMLCanvasElement | HTMLCanvasElement,
+                MouseEvent
+              >
+            | WheelEvent;
           canvas: HTMLCanvasElement;
         },
     camera: [number, number]

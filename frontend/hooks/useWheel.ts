@@ -1,3 +1,4 @@
+import { Mouse } from '@/lib/geomotry';
 import {
   Dispatch,
   ElementRef,
@@ -9,19 +10,32 @@ import {
 export const useWheel = ({
   setCamera,
   canvasRef,
+  setMouse,
 }: {
   setCamera: Dispatch<SetStateAction<[number, number]>>;
   canvasRef: RefObject<ElementRef<'canvas'>>;
+  setMouse: React.Dispatch<React.SetStateAction<Mouse | null>>;
 }) => {
   useEffect(() => {
     const canvasNode = canvasRef.current;
-    const handleWheel = (e: WheelEvent) => {
-      e.preventDefault();
+    if (!canvasNode) return;
+    const handleWheel = (event: WheelEvent) => {
+      event.preventDefault();
       setCamera((camera) => {
         const factor = 0.2;
-        const deltaX = e.deltaX * factor;
-        const deltaY = e.deltaY * factor;
-        return [camera[0] - deltaX, camera[1] - deltaY];
+        const deltaX = event.deltaX * factor;
+        const deltaY = event.deltaY * factor;
+
+        const newCameraX = camera[0] - deltaX;
+        const newCameraY = camera[1] - deltaY;
+        const newMouse = new Mouse(
+          { type: 'event', event, canvas: canvasNode },
+          camera
+        );
+
+        setMouse(newMouse);
+
+        return [newCameraX, newCameraY];
       });
     };
 
@@ -30,5 +44,5 @@ export const useWheel = ({
     return () => {
       canvasNode?.removeEventListener('wheel', handleWheel);
     };
-  }, [canvasRef, setCamera]);
+  }, [canvasRef, setCamera, setMouse]);
 };

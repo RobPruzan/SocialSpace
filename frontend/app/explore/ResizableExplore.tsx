@@ -1,5 +1,6 @@
 'use client';
 import Canvas from '@/components/canvas/Canvas';
+import Social from '@/components/social/Social';
 import Resizable from '@/components/ui/resizeable';
 import { Percentage, TypedChallenge } from '@/lib/types';
 import React, { useState } from 'react';
@@ -36,14 +37,7 @@ const ResizableExplore = (props: Props) => {
             />
           </div>
         }
-        rightDiv={
-          <div className="w-full h-full ">
-            <div className="h-[8%] w-full border-2 border-b-0 text-lg text-white">
-              {currentChallenge?.id}
-            </div>
-            <div className="h-[90%] w-full border-2  "></div>
-          </div>
-        }
+        rightDiv={<Social currentChallenge={currentChallenge} />}
       />
     </div>
   );

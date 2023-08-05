@@ -1,29 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { withMeta } from '../store';
-import { FirstParameter, Rectangle } from '@/lib/types';
-
-type User = {
-  id: string;
-  img: string;
-  cords: [number, number];
-  challengeIds: Array<Pick<Challenge, 'id'>>;
-  postIds: Array<Pick<Post, 'id'>>;
-  chatIds: Array<Pick<Chat, 'id'>>;
-  username: string;
-};
-
-type Chat = {
-  id: string;
-  user: User;
-  message: string;
-};
-
-type Post = {
-  id: string;
-  img: string | null;
-  title: string;
-  content: string;
-};
+import { FirstParameter, Rectangle, User } from '@/lib/types';
+import { Chat, Post } from './socialSlice';
 
 export type Challenge = {
   id: string;
@@ -31,11 +9,11 @@ export type Challenge = {
   img: string;
   name: string;
   description: string;
-  userIds: Array<Pick<User, 'id'>>;
+  userIds: Array<User['id']>;
   targetPoints: number;
   currentPoints: number;
-  chatIds: Array<Pick<Chat, 'id'>>;
-  postIds: Array<Pick<Post, 'id'>>;
+  chatIds: Array<Chat['id']>;
+  postIds: Array<Post['id']>;
 };
 
 export const buildInitialChallenge = (
@@ -63,14 +41,14 @@ const initialState: State = {
   challenges: [],
 };
 type MetaParams<TPayload> = FirstParameter<typeof withMeta<TPayload, State>>;
-const withCanvasMeta = <TPayload>(args: MetaParams<TPayload>) =>
+const withChallengeMeta = <TPayload>(args: MetaParams<TPayload>) =>
   withMeta<TPayload, State>(args);
 
 export const exploreSlice = createSlice({
   name: 'challenge',
   initialState,
   reducers: {
-    addChallenge: withCanvasMeta<Challenge>((state, action) => {
+    addChallenge: withChallengeMeta<Challenge>((state, action) => {
       state.challenges.push(action.payload);
     }),
   },

@@ -3,6 +3,8 @@ import { Middleware, PayloadAction, configureStore } from '@reduxjs/toolkit';
 import { useDispatch, TypedUseSelectorHook, useSelector } from 'react-redux';
 import { SocketIO, socketManager } from './socket';
 import { exploreSlice } from './slices/challengeSlice';
+import { socialSlice } from './slices/socialSlice';
+import { userSlice } from './slices/userSlice';
 export type SocketAction = { type: string; payload: any; meta: Meta };
 type Meta = {};
 export function withMeta<TPayload, TState>(
@@ -48,6 +50,8 @@ const indexDBMiddleware =
 export const store = configureStore({
   reducer: {
     explore: exploreSlice.reducer,
+    social: socialSlice.reducer,
+    user: userSlice.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware()

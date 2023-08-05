@@ -67,6 +67,7 @@ const Canvas = ({
   useWheel({
     canvasRef,
     setCamera,
+    setMouse,
   });
 
   useEffect(() => {
