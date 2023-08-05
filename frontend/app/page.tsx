@@ -4,9 +4,7 @@ import Image from 'next/image';
 export default function Home() {
   return (
     <main className="h-screen w-screen">
-      <div className="w-full h-full">
-        <Canvas />
-      </div>
+      <div className="w-full h-full"></div>
     </main>
   );
 }

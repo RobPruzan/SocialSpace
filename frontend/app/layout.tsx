@@ -5,6 +5,7 @@ import { Inter } from 'next/font/google';
 import { store } from '@/redux/store';
 import { Provider } from 'react-redux';
 import Providers from './Providers';
+import { twMerge } from 'tailwind-merge';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -20,7 +21,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={twMerge(inter.className, 'bg-primary text-primary')}>
         <Providers>{children}</Providers>
       </body>
     </html>

@@ -1,10 +1,62 @@
 'use client';
-import React, { ElementRef, useEffect, useRef, useState } from 'react';
+import React, {
+  ComponentProps,
+  ElementRef,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+import { twMerge } from 'tailwind-merge';
+import {
+  ContextMenu,
+  ContextMenuCheckboxItem,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuLabel,
+  ContextMenuRadioGroup,
+  ContextMenuRadioItem,
+  ContextMenuSeparator,
+  ContextMenuShortcut,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu';
+import { Percentage } from '@/lib/types';
 
-const Canvas = () => {
+type Props = {
+  leftDivSize: number | Percentage;
+  rightDivSize: number | Percentage;
+} & ComponentProps<'div'>;
+
+const Canvas = ({ leftDivSize, rightDivSize, ...divProps }: Props) => {
   const canvasRef = useRef<ElementRef<'canvas'>>(null);
   const containerRef = useRef<ElementRef<'div'>>(null);
   const [camera, setCamera] = useState<[number, number]>([0, 0]);
+  const [canvasDim, setCanvasDim] = useState<[number, number]>([500, 500]);
+
+  useEffect(() => {
+    function resizeHandler() {
+      const container = containerRef?.current;
+      if (!container) return;
+
+      setCanvasDim([container.offsetWidth, container.offsetHeight]);
+    }
+
+    window.addEventListener('resize', resizeHandler);
+    return () => {
+      window.removeEventListener('resize', resizeHandler);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    setCanvasDim([
+      containerRef.current.offsetWidth,
+      containerRef.current.offsetHeight,
+    ]);
+  }, [containerRef, leftDivSize, rightDivSize]);
 
   useEffect(() => {
     const canvasNode = canvasRef.current;
@@ -27,14 +79,35 @@ const Canvas = () => {
 
   useEffect(() => {
     const canvas = canvasRef?.current;
+    const container = containerRef?.current;
     const ctx = canvas?.getContext('2d');
 
-    if (!ctx || !canvas) return;
+    if (!ctx || !canvas || !container) return;
+    // ctx.save();
+    const dpr = window.devicePixelRatio;
+    const rect = container.getBoundingClientRect();
+
+    // Set the "actual" size of the canvas
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+
+    // Scale the context to ensure correct drawing operations
+    ctx.scale(dpr, dpr);
+
+    // // Translate the origin to the camera position
+
+    // Set the "drawn" size of the canvas
+    canvas.style.width = `${rect.width}px`;
+    canvas.style.height = `${rect.height}px`;
+
+    // // Clear the canvas, taking into account the new origin
+    // ctx.clearRect(-camera[0], -camera[1], rect.width, rect.height);
+    // ctx.restore();
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    ctx.save();
     ctx.translate(camera[0], camera[1]);
+
+    // ctx.translate(camera[0], camera[1]);
     const bounds = {
       left: -camera[0],
       top: -camera[1],
@@ -49,27 +122,82 @@ const Canvas = () => {
 
     for (let x = bounds.left; x <= bounds.right; x += gridSize) {
       for (let y = bounds.top; y <= bounds.bottom; y += gridSize) {
-        ctx.strokeStyle = '#ccc';
+        // light gray, lighter than ccc
+        ctx.strokeStyle = '#eee';
         ctx.lineJoin = 'miter';
-        ctx.lineWidth = 0.1;
-        ctx.strokeRect(x, y, gridSize, gridSize);
+        ctx.lineWidth = 0.6;
+        // ctx.strokeRect(x, y, gridSize, gridSize);
+        // circle
+        ctx.beginPath();
+        ctx.arc(x, y, 1, 0, 2 * Math.PI);
+        ctx.fillStyle = '#ccc';
+        ctx.stroke();
       }
     }
 
     ctx.restore();
-  }, [camera]);
+  }, [camera, canvasDim]);
 
   return (
     <div
       ref={containerRef}
-      className="w-1/2 h-1/2 border border-primary rounded-lg overflow-hidden"
+      className={twMerge(
+        'min-w-[50%] max-w-[50%] min-h-[50%] max-h-[50%] border-2',
+        divProps.className
+      )}
     >
-      <canvas
-        className="overflow-hidden"
-        width={containerRef.current?.offsetWidth ?? 1000}
-        height={containerRef.current?.offsetHeight ?? 1000}
-        ref={canvasRef}
-      />
+      <ContextMenu>
+        <ContextMenuTrigger>
+          <canvas
+            className="overflow-hidden"
+            width={canvasDim[0]}
+            height={canvasDim[1]}
+            ref={canvasRef}
+          />
+        </ContextMenuTrigger>
+        <ContextMenuContent className="w-64">
+          <ContextMenuItem inset>
+            Back
+            <ContextMenuShortcut>⌘[</ContextMenuShortcut>
+          </ContextMenuItem>
+          <ContextMenuItem inset disabled>
+            Forward
+            <ContextMenuShortcut>⌘]</ContextMenuShortcut>
+          </ContextMenuItem>
+          <ContextMenuItem inset>
+            Reload
+            <ContextMenuShortcut>⌘R</ContextMenuShortcut>
+          </ContextMenuItem>
+          <ContextMenuSub>
+            <ContextMenuSubTrigger inset>More Tools</ContextMenuSubTrigger>
+            <ContextMenuSubContent className="w-48">
+              <ContextMenuItem>
+                Save Page As...
+                <ContextMenuShortcut>⇧⌘S</ContextMenuShortcut>
+              </ContextMenuItem>
+              <ContextMenuItem>Create Shortcut...</ContextMenuItem>
+              <ContextMenuItem>Name Window...</ContextMenuItem>
+              <ContextMenuSeparator />
+              <ContextMenuItem>Developer Tools</ContextMenuItem>
+            </ContextMenuSubContent>
+          </ContextMenuSub>
+          <ContextMenuSeparator />
+          <ContextMenuCheckboxItem checked>
+            Show Bookmarks Bar
+            <ContextMenuShortcut>⌘⇧B</ContextMenuShortcut>
+          </ContextMenuCheckboxItem>
+          <ContextMenuCheckboxItem>Show Full URLs</ContextMenuCheckboxItem>
+          <ContextMenuSeparator />
+          <ContextMenuRadioGroup value="pedro">
+            <ContextMenuLabel inset>People</ContextMenuLabel>
+            <ContextMenuSeparator />
+            <ContextMenuRadioItem value="pedro">
+              Pedro Duarte
+            </ContextMenuRadioItem>
+            <ContextMenuRadioItem value="colm">Colm Tuite</ContextMenuRadioItem>
+          </ContextMenuRadioGroup>
+        </ContextMenuContent>
+      </ContextMenu>
     </div>
   );
 };
